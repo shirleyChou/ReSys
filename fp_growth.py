@@ -1,23 +1,9 @@
 # encoding: utf-8
+from fp_tree import FPTree
 
-
-class TreeNode:
-    def __init__(self, name, num_of_occur, node_of_parent):
-        self.name = name
-        self.count = num_of_occur
-        self.link_of_node = None
-        self.parent = node_of_parent
-        self.child = {}
-
-    def increase(self, num_of_occur):
-        self.count += num_of_occur
-
-    def disp(self, index=1):
-        print '' * index, self.name, '', self.count
-        for child in self.child.values():
-            child.disp(index + 1)
-
-def load_data():
+def test_data():
+    """Create test data
+    """
     simple_data = [['r', 'z', 'h', 'j', 'p'],
                    ['z', 'y', 'x', 'w', 'v', 'u', 't', 's'],
                    ['z'],
@@ -26,50 +12,58 @@ def load_data():
                    ['y', 'z', 'x', 'e', 'q', 's', 't', 'm']]
     return simple_data
 
-def create_init_set(data):
-    return_dict = {}
+def initialize_data(data):
+    """format data for function create_tree
+    """
+    init_set = {}
     for trans in data:
-        return_dict[forzenset(trans)] = 1
-    return return_dict
+        # forzenset: sets that cannot change and can be used for keys in dict.
+        init_set[frozenset(trans)] = 1
+    return init_set
 
-def create_tree(data, min_support=1):
+# sort items according to its frequency
+def create_header_table(init_set, min_support=1):
     header_table = {}
-    for trans in data:
-        for item in trans:
-            header_table[item] = header_table.get(item, 0) + data[trans]
+    for items in init_set:
+        for item in items:
+            header_table[item] = header_table.get(item, 0) + init_set[items]
+    for key in header_table.keys():
+        if header_table[key] < min_support:
+            header_table.pop(key)
+    return header_table
 
-    for k in header_table.keys():
-        if header_table[k] < min_support:
-            del(header_table[k])
+def create_tree(init_set, header_table):
     freq_item_set = set(header_table.keys())
-    if len(freq_item_set) == 0:
+    if not len(freq_item_set):
         return None, None
-    for k in header_table:
-        header_table[k] = [header_table[k], None]
-    return_tree = TreeNode('Null Set', 1, None)
-    for tran_set, count in data.items():
-        localD = {}
+    for key in header_table:
+        header_table[key] = [header_table[key], None]
+    fp_tree = FPTree('Null Set', 1, None)
+
+    # Order each tran_set by their frequency and add it to fp_tree.
+    for tran_set, count in init_set.items():
+        frequency = {}
         for item in tran_set:
             if item in freq_item_set:
-                localD[item] = header_table[item][0]
-        if len(localD) > 0:
-            ordered_items = [v[0] for v in sorted(localD.items(),
+                frequency[item] = header_table[item][0]
+        if len(frequency):
+            ordered_items = [v[0] for v in sorted(frequency.items(),
                                            key=lambda p: p[1],
                                            reverse=True)]
-            update_tree(ordered_items, return_tree, header_table, count)
-    return return_tree, header_table
+            update_tree(ordered_items, fp_tree, header_table, count)
+    return fp_tree, header_table
 
-def update_tree(items, in_tree, header_table, count):
-    if items[0] in in_tree.child:
-        in_tree.child[item[0]].increase(count)
+def update_tree(items, fp_tree, header_table, count):
+    if items[0] in fp_tree.child:
+        fp_tree.child[items[0]].increase(count)
     else:
-        in_tree.child[item[0]] = TreeNode(items[0], count, in_tree)
-        if not header_table[item[0]][1]:
-            header_table[item[0]][1] = in_tree.child[item[0]]
+        fp_tree.child[items[0]] = FPTree(items[0], count, fp_tree)
+        if not header_table[items[0]][1]:
+            header_table[items[0]][1] = fp_tree.child[items[0]]
         else:
-            update_header(header_table[item[0]][1], in_tree.child[items[0]])
+            update_header(header_table[items[0]][1], fp_tree.child[items[0]])
     if len(items) > 1:
-        update_tree(items[1::], in_tree.child[items[0]], header_table, count)
+        update_tree(items[1::], fp_tree.child[items[0]], header_table, count)
 
 def update_header(node_to_test, target_node):
     while node_to_test.link_of_node:
