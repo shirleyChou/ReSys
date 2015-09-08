@@ -3,7 +3,7 @@
 
 class FPTree:
     def __init__(self, name, num_of_occur, node_of_parent):
-        self.node_name = name
+        self.name = name
         self.count = num_of_occur
         self.link_of_node = None
         self.parent = node_of_parent
