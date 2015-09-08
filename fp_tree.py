@@ -13,6 +13,6 @@ class FPTree:
         self.count += num_of_occur
 
     def disp(self, index=1):
-        print '' * index, self.node_name, '', self.count
+        print ' ' * ind, self.node_name, ' ', self.count
         for child in self.child.values():
             child.disp(index + 1)
